@@ -22,7 +22,8 @@ type Poll struct {
 	pk     bfv.PublicKey
 	rlk    bfv.EvaluationKey
 
-	result *bfv.Ciphertext
+	responses []*bfv.Ciphertext
+	result    *bfv.Ciphertext
 }
 
 // NewPoll creates a new poll struct from an http form
@@ -39,8 +40,13 @@ func NewPoll(r *http.Request) (*Poll, error) {
 // RegisterResponse reads a new poll response from an http form
 func (p *Poll) RegisterResponse(r *http.Request) error {
 	name := r.FormValue("name")
-	p.Responses[name] = new(bfv.Ciphertext)
-	return utils.UnmarshalFromBase64(p.Responses[name], r.FormValue("ct"))
+	ct, update := p.Responses[name]
+	if !update {
+		ct = new(bfv.Ciphertext)
+		p.responses = append(p.responses, ct)
+		p.Responses[name] = ct
+	}
+	return utils.UnmarshalFromBase64(ct, r.FormValue("ct"))
 }
 
 // Close computes the poll results and closes the poll
@@ -48,18 +54,13 @@ func (p *Poll) Close() {
 	p.Closed = true
 	if len(p.Responses) > 0 {
 		eval := bfv.NewEvaluator(&p.params)
-		agg := make([]bfv.Ciphertext, 0, len(p.Responses))
 
-		// puts all the responses in an array
-		for _, ct := range p.Responses {
-			agg = append(agg, *ct)
-		}
-
+		agg := p.responses
 		// aggregates the responses iteratively
 		for len(agg) > 1 {
-			agg = append(agg[2:], *eval.RelinearizeNew(eval.MulNew(&agg[0], &agg[1]), &p.rlk))
+			agg = append(agg[2:], eval.RelinearizeNew(eval.MulNew(agg[0], agg[1]), &p.rlk))
 		}
-		p.result = &agg[0]
+		p.result = agg[0]
 	}
 }
 
