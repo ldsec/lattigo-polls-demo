@@ -56,9 +56,12 @@ func (p *Poll) Close() {
 		eval := bfv.NewEvaluator(&p.params)
 
 		agg := p.responses
-		// aggregates the responses iteratively
+		// aggregates the responses recursively
 		for len(agg) > 1 {
-			agg = append(agg[2:], eval.RelinearizeNew(eval.MulNew(agg[0], agg[1]), &p.rlk))
+			agg = append(agg[2:],
+				eval.RelinearizeNew(
+					eval.MulNew(agg[0], agg[1]), &p.rlk),
+			)
 		}
 		p.result = agg[0]
 	}
