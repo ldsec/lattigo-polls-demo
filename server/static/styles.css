@@ -1,0 +1,120 @@
+body {
+    background-color: snow;
+    padding-top: 3cm;
+}
+
+#frame {
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+#content {
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+h1 {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    color: #009879;
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    letter-spacing: -3px;
+}
+
+a {
+    text-decoration: none;
+}
+
+.responses_table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    font-family: sans-serif;
+}
+
+.responses_table thead tr {
+    width: 100%;
+    display:table-row;
+    background-color: #009879;
+    color: #ffffff;
+    text-align: left;
+}
+
+.responses_table tr.choices td {
+    text-align: center; 
+    vertical-align: middle;
+}
+
+.responses_table input[type=checkbox] {
+    transform: scale(1.5);
+}
+
+.responses_table input[type=text]{
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+     border-radius: 10px;
+     border: 1px solid #2d9fd9;
+     height: 30px;
+     padding-left: 10px;
+     width: 100%;
+}
+
+input[type=submit] {
+    border-radius: 10px;
+    border: #009879 1px solid;
+    color: #009879;
+    font-weight: bold;
+}
+
+input[type=submit]:hover {
+    border: #a0d18c 1px solid;
+    color: #a0d18c;
+}
+
+
+input[type=text]:focus {
+    outline: none;
+    border: 1px solid #a0d18c;
+}
+
+.new_poll_form {
+    text-align: center;
+}
+
+.new_poll_form input[type=submit] {
+    width: 50%;
+    height: 50px;
+    margin: 30px
+}
+
+.responses_table input[type=submit] {
+    width: 100%;
+    height: 30px;
+}
+
+.responses_table th,
+.responses_table td {
+    padding: 12px 15px;
+}
+
+.responses_table td {
+    outline: white 3px solid;
+    outline-offset: -3px;
+    height: 50px;
+}
+
+.encrypted {
+    background-color: lightgray;
+}
+
+.free {
+    background-color: #cdeaa1;
+    color: green;
+    font-size: 16pt;
+    text-align: center;
+}
+
+.busy {
+    background-color: #fac8c8;
+}

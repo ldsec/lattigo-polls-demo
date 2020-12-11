@@ -1,0 +1,161 @@
+<html>
+	<head>
+        <meta charset="utf-8"/>
+        {{if .}}
+            <script type="application/json" id="poll_pub_data">
+            {{.PublicDataJSON}}
+            </script>
+        {{end}}
+        <link rel="stylesheet" href="/static/styles.css">
+        <script src="/static/wasm_exec.js"></script>
+		<script>
+
+            // Poll data loading
+            let pollDataElem = document.getElementById('poll_pub_data');
+            let pollData = (pollDataElem) ? JSON.parse(pollDataElem.innerHTML) : new Object() ;
+
+            // Key material loading
+            let sk = localStorage.getItem(pollData.id+".sk");
+            let key = (sk) ? {type:"sk", key: sk} : {type:"pk", key: pollData.pubkey};
+
+            const go = new Go();
+			WebAssembly.instantiateStreaming(fetch("/static/client.wasm"), go.importObject).then((result) => {
+                
+                // starts the Wasm client runtime
+                go.run(result.instance);
+
+                // initialize the client with the sk or pk
+                initClient(key);
+
+                // if the poll is closed and the secret key is available for that poll, decrypts and renders the result
+                if (sk && pollData.closed) {
+                    console.log("decr";
+                    let days = (pollData.result != "nil") ? decryptResults(pollData.result) : [0,0,0,0,0,0,0];
+                    let cells = document.getElementById("result_row").childNodes;
+                    days.forEach((day, index) => {
+                        let cell = cells[index+2];
+                        cell.className = (day) ? "free": "busy";
+                        cell.innerHTML = (day) ? "&#10004;" : "";
+                    })
+                }
+            });
+
+            // Poll creation button callback
+            function createPoll(){
+                
+                // generates the BFV keys
+                let keys = genKeys(new Object());
+
+                // constructs the poll creation request
+                var formData = new FormData();
+                formData.append("pk", keys.pk);
+                formData.append("rlk", keys.rlk);
+                var request = new XMLHttpRequest();
+                request.open("POST", "/polls");
+
+                // sets the poll creation response callback
+                request.onload = function(oEvent) {
+                    // extracts the poll ID from the response and redirect to the poll page
+                    let pollID = request.responseText;
+                    localStorage.setItem(pollID + ".sk", keys.sk); // stores the secret key
+                    window.location.href = "/polls/"+pollID;
+                };
+
+                request.send(formData); // sends the poll creation request
+            };
+            
+            // Poll response button callback
+            function submitToPoll(){
+
+                // retreives the checkboxes states 
+                const checkboxes = document.querySelectorAll('input[name="days"]:checked');
+                let days = [0,0,0,0,0,0,0];
+                checkboxes.forEach((checkbox) => {
+                    days[checkbox.value] = 1;
+                });
+                let name = document.getElementById("nameInput").value;
+                let ct = encryptAvailabilities(days);
+                var formData = new FormData();
+                formData.append("ct", ct);
+                formData.append("name", name);
+                var request = new XMLHttpRequest();
+                request.open("POST", window.location);
+                request.onload = function(oEvent) {
+                    window.location.href = window.location.href;
+                };
+                request.send(formData);
+            };
+
+            // Poll closing button callback
+            function closePoll(){
+                window.location.href = window.location.href + "?closing=true";
+            };
+
+		</script>
+	</head>
+	<body>
+        <div id="frame">
+            <a href="/polls"><h1>Private Polls</h1></a>
+            <div id="content">
+            {{if .}}
+                <table id="responses" class="responses_table">
+                    <colgroup>
+                        <col span="1" style="width: 20%; color: aqua;">
+                        <col span="7" style="width: 70;">
+                        <col span="1" style="width: 10;">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Mon</th>
+                        <th>Tue</th>
+                        <th>Wed</th>
+                        <th>Thu</th>
+                        <th>Fri</th>
+                        <th>Sat</th>
+                        <th>Sun</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range $name, $ct := .Responses}}
+                    <tr>
+                        <td>{{printf "%s" $name}}</td>
+                        <td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td>
+                    </tr>
+                    {{end}}
+                    {{if not .Closed}}
+                        <tr class="choices">
+                            <td><input type="text" name="name" id="nameInput" placeholder="Enter your name"></td>
+                            <td><input type="checkbox" name="days" value="0"></td>
+                            <td><input type="checkbox" name="days" value="1"></td>
+                            <td><input type="checkbox" name="days" value="2"></td>
+                            <td><input type="checkbox" name="days" value="3"></td>
+                            <td><input type="checkbox" name="days" value="4"></td>
+                            <td><input type="checkbox" name="days" value="5"></td>
+                            <td><input type="checkbox" name="days" value="6"></td>
+                            <td><input type="submit" name="answer" value="Submit to poll" onclick="submitToPoll();"></td>
+                        </tr>
+                    {{end}}
+                    <tr id="result_row" class="choices">
+                    {{if .Closed}}
+                        <td></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td>
+                    {{else}}
+                        <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+                        <td>
+                            <input type="submit" name="closing" value="Close poll" onclick="closePoll();">
+                        </td>
+                    {{end}}
+                    </tr>
+                </tbody>
+                </table>
+            {{else}}
+                <div class="new_poll_form">
+                    <input type="submit" name="create" value="Create new poll" onclick="createPoll();">
+                </div>
+            {{end}}
+            </div>
+        </div>
+    </body>
+</html>
+
