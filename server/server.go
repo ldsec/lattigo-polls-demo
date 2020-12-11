@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"lattigo-demo/utils"
+	"lattigo-polls-demo/utils"
 	"log"
 	"net/http"
 	"text/template"
@@ -18,7 +18,7 @@ type Poll struct {
 	Closed    bool
 	Responses map[string]*bfv.Ciphertext
 
-	params bfv.Parameters
+	params *bfv.Parameters
 	pk     *bfv.PublicKey
 	rlk    *bfv.EvaluationKey
 	result *bfv.Ciphertext
@@ -27,7 +27,7 @@ type Poll struct {
 // NewPoll creates a new poll struct from an http form
 func NewPoll(r *http.Request) (*Poll, error) {
 	p := new(Poll)
-	p.params = *bfv.DefaultParams[1]
+	p.params = bfv.DefaultParams[1]
 	utils.UnmarshalFromBase64(p.pk, r.FormValue("pk"))
 	utils.UnmarshalFromBase64(p.rlk, r.FormValue("rlk"))
 	p.Responses = make(map[string]*bfv.Ciphertext, 5)
@@ -46,7 +46,7 @@ func (p *Poll) RegisterResponse(r *http.Request) error {
 func (p *Poll) Close() {
 	p.Closed = true
 	if len(p.Responses) > 0 {
-		eval := bfv.NewEvaluator(&p.params)
+		eval := bfv.NewEvaluator(p.params)
 		agg := make([]*bfv.Ciphertext, 0, len(p.Responses))
 
 		// puts all the responses in an array

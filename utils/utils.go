@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"reflect"
-	"syscall/js"
 )
 
 // MarshalToBase64String returns serialization of a marshallable type as a base-64-encoded string
@@ -34,22 +33,4 @@ func UnmarshalFromBase64(bum encoding.BinaryUnmarshaler, b64string string) error
 func GetSha256Hex(bm encoding.BinaryMarshaler) string {
 	b, _ := bm.MarshalBinary()
 	return fmt.Sprintf("%x", sha256.Sum256(b))
-}
-
-// JsInputs performs the js.Value unwrapping to int64
-func JsInputs(in js.Value) []int64 {
-	coeffs := make([]int64, 7)
-	for i := range coeffs {
-		coeffs[i] = int64(in.Index(i).Int())
-	}
-	return coeffs
-}
-
-// JsOutput converts the output to []interface{} to comply with syscall/js return value support
-func JsOutput(out []int64) []interface{} {
-	coeffs := make([]interface{}, 7)
-	for i, v := range out {
-		coeffs[i] = v
-	}
-	return coeffs
 }

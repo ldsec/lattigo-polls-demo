@@ -1,7 +1,7 @@
 package main
 
 import (
-	"lattigo-demo/utils"
+	"lattigo-polls-demo/utils"
 	"log"
 	"syscall/js"
 
@@ -43,14 +43,14 @@ func NewPollClient(params *bfv.Parameters, keyObj js.Value) (*PollClient, error)
 
 func main() {
 
-	var pc *PollClient
+	var pollClient *PollClient
 	var params = bfv.DefaultParams[1]
 
 	// creates the initialization javascript function
 	initClientFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		keyObj := args[0]
 		var err error
-		if pc, err = NewPollClient(params, keyObj); err != nil {
+		if pollClient, err = NewPollClient(params, keyObj); err != nil {
 			log.Fatalln("PollClient not initialized:", err)
 		}
 		log.Println("PollClient initialized")
@@ -61,8 +61,8 @@ func main() {
 	genKeysFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		jsObj := args[0]
 		// generates the necessary keys
-		sk, pk := pc.GenKeyPair()
-		rlk := pc.GenRelinKey(sk, 1)
+		sk, pk := pollClient.GenKeyPair()
+		rlk := pollClient.GenRelinKey(sk, 1)
 
 		// exports the keys to js in base64 representation
 		jsObj.Set("sk", utils.MarshalToBase64String(sk))
@@ -74,14 +74,14 @@ func main() {
 
 	// creates the encryption javasript function
 	encryptAvailabilitiesFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		coeffs := utils.JsInputs(args[0])
+		coeffs := JsInputs(args[0])
 
 		// encodes the inputs in a lattigo plaintext
 		pt := bfv.NewPlaintext(params)
-		pc.EncodeInt(coeffs, pt)
+		pollClient.EncodeInt(coeffs, pt)
 
 		// encrypts the inputs
-		ct := pc.EncryptNew(pt)
+		ct := pollClient.EncryptNew(pt)
 
 		return utils.MarshalToBase64String(ct)
 	})
@@ -90,14 +90,13 @@ func main() {
 	decryptResultsFunc := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		ctObj := args[0]
 
-		if pc.Decryptor != nil {
+		if pollClient.Decryptor != nil {
 			// decrypts the passed ciphertext result into a lattigo plaintext
 			ct := bfv.NewCiphertext(params, 1)
 			utils.UnmarshalFromBase64(ct, ctObj.String())
-			pt := pc.DecryptNew(ct)
-
-			output := pc.DecodeInt(pt)
-			return utils.JsOutput(output[:7])
+			pt := pollClient.DecryptNew(ct)
+			output := pollClient.DecodeIntNew(pt)
+			return JsOutput(output[:7])
 		}
 
 		return nil
@@ -110,4 +109,22 @@ func main() {
 	js.Global().Set("decryptResults", decryptResultsFunc)
 
 	<-make(chan bool) // prevents the program from exiting
+}
+
+// JsInputs performs the js.Value unwrapping to int64
+func JsInputs(in js.Value) []int64 {
+	coeffs := make([]int64, 7)
+	for i := range coeffs {
+		coeffs[i] = int64(in.Index(i).Int())
+	}
+	return coeffs
+}
+
+// JsOutput converts the output to []interface{} to comply with syscall/js return value support
+func JsOutput(out []int64) []interface{} {
+	coeffs := make([]interface{}, 7)
+	for i, v := range out {
+		coeffs[i] = v
+	}
+	return coeffs
 }
