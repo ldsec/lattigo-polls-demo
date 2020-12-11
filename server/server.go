@@ -18,20 +18,21 @@ type Poll struct {
 	Closed    bool
 	Responses map[string]*bfv.Ciphertext
 
-	params *bfv.Parameters
-	pk     *bfv.PublicKey
-	rlk    *bfv.EvaluationKey
+	params bfv.Parameters
+	pk     bfv.PublicKey
+	rlk    bfv.EvaluationKey
+
 	result *bfv.Ciphertext
 }
 
 // NewPoll creates a new poll struct from an http form
 func NewPoll(r *http.Request) (*Poll, error) {
 	p := new(Poll)
-	p.params = bfv.DefaultParams[1]
-	utils.UnmarshalFromBase64(p.pk, r.FormValue("pk"))
-	utils.UnmarshalFromBase64(p.rlk, r.FormValue("rlk"))
+	p.params = *bfv.DefaultParams[1]
+	utils.UnmarshalFromBase64(&p.pk, r.FormValue("pk"))
+	utils.UnmarshalFromBase64(&p.rlk, r.FormValue("rlk"))
 	p.Responses = make(map[string]*bfv.Ciphertext, 5)
-	p.ID = utils.GetSha256Hex(p.pk)
+	p.ID = utils.GetSha256Hex(&p.pk)
 	return p, nil
 }
 
@@ -46,19 +47,19 @@ func (p *Poll) RegisterResponse(r *http.Request) error {
 func (p *Poll) Close() {
 	p.Closed = true
 	if len(p.Responses) > 0 {
-		eval := bfv.NewEvaluator(p.params)
-		agg := make([]*bfv.Ciphertext, 0, len(p.Responses))
+		eval := bfv.NewEvaluator(&p.params)
+		agg := make([]bfv.Ciphertext, 0, len(p.Responses))
 
 		// puts all the responses in an array
 		for _, ct := range p.Responses {
-			agg = append(agg, ct)
+			agg = append(agg, *ct)
 		}
 
 		// aggregates the responses iteratively
 		for len(agg) > 1 {
-			agg = append(agg[2:], eval.RelinearizeNew(eval.MulNew(agg[0], agg[1]), p.rlk))
+			agg = append(agg[2:], *eval.RelinearizeNew(eval.MulNew(&agg[0], &agg[1]), &p.rlk))
 		}
-		p.result = agg[0]
+		p.result = &agg[0]
 	}
 }
 
@@ -66,7 +67,7 @@ func (p *Poll) Close() {
 func (p *Poll) PublicDataJSON() string {
 	b, _ := json.Marshal(map[string]interface{}{
 		"id":     p.ID,
-		"pubkey": utils.MarshalToBase64String(p.pk),
+		"pubkey": utils.MarshalToBase64String(&p.pk),
 		"result": utils.MarshalToBase64String(p.result),
 		"closed": p.Closed,
 	})

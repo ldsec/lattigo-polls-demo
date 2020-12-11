@@ -29,7 +29,6 @@
 
                 // if the poll is closed and the secret key is available for that poll, decrypts and renders the result
                 if (sk && pollData.closed) {
-                    console.log("decr";
                     let days = (pollData.result != "nil") ? decryptResults(pollData.result) : [0,0,0,0,0,0,0];
                     let cells = document.getElementById("result_row").childNodes;
                     days.forEach((day, index) => {
