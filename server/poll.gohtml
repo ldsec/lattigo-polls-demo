@@ -29,7 +29,7 @@
 
                 // if the poll is closed and the secret key is available for that poll, decrypts and renders the result
                 if (sk && pollData.closed) {
-                    let days = (pollData.result != "nil") ? decryptResults(pollData.result) : [0,0,0,0,0,0,0];
+                    let days = (pollData.result != "nil") ? decrypt(pollData.result) : [0,0,0,0,0,0,0];
                     let cells = document.getElementById("result_row").childNodes;
                     days.forEach((day, index) => {
                         let cell = cells[index+2];
@@ -73,7 +73,7 @@
                     days[checkbox.value] = 1;
                 });
                 let name = document.getElementById("nameInput").value;
-                let ct = encryptAvailabilities(days);
+                let ct = encrypt(days);
                 var formData = new FormData();
                 formData.append("ct", ct);
                 formData.append("name", name);
@@ -117,7 +117,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {{range $name, $ct := .Responses}}
+                    {{range $name, $ct := .Participants}}
                     <tr>
                         <td>{{printf "%s" $name}}</td>
                         <td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td><td class="encrypted"></td>
