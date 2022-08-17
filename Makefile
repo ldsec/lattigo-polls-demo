@@ -2,7 +2,7 @@
 
 GOROOT=$(shell go env GOROOT)
 
-main.wasm:
+client.wasm:
 	GOOS=js GOARCH=wasm go build -o server/static/client.wasm client/client.go
 
 server/static/wasm_exec.js:

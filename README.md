@@ -19,4 +19,5 @@ cd server
 go run server.go
 ```
 
+Once the server is running, the web interface should be accessible at [http://localhost:8080/polls](http://localhost:8080/polls).
 

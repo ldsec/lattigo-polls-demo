@@ -1,6 +1,9 @@
 # will be copied from GOROOT as a Makefile target for forward compatibility.
 wasm_exec.js
 
+# the compiled wasm binary
+server/static/client.wasm
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Go template
 # Binaries for programs and plugins
