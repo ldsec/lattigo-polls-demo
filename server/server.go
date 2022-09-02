@@ -100,8 +100,12 @@ func main() {
 	// loads the page template
 	pollTpl := template.Must(template.ParseFiles("poll.gohtml"))
 
+	ps.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
+		pollTpl.Execute(rw, nil) // renders the poll-creation page
+	})
+
 	// the root route: GET renders the poll creation button and POST handles the poll creation
-	ps.HandleFunc("/polls", func(rw http.ResponseWriter, r *http.Request) {
+	ps.HandleFunc("/{polls:polls\\/?}", func(rw http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" { // creates the poll and responds its ID
 			p := ps.NewPoll(r)
 			rw.Write([]byte(p.ID))
